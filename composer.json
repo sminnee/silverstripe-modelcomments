@@ -12,5 +12,10 @@
             "name": "Sam Minnee",
             "email": "sam@silverstripe.com"
         }
-    ]
+    ],
+    "autoload": {
+        "psr-4": {
+            "Sminnee\\ModelComments\\": "src//"
+        }
+    }
 }
