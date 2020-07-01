@@ -16,6 +16,11 @@ class HasModelCommentsExtension extends DataExtension
 
     public function updateCMSFields($fields)
     {
+        // If a new record without relationships, we don't need this
+        if (!$fields->fieldByName('Root')->fieldByName('ModelComments')) {
+            return;
+        }
+
         $fields->fieldByName('Root')->fieldByName('ModelComments')->setTitle('Comments');
 
         $fields->dataFieldByName('ModelComments')->setConfig((new GF\GridFieldConfig)
