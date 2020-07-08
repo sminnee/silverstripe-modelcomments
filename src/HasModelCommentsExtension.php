@@ -23,10 +23,14 @@ class HasModelCommentsExtension extends DataExtension
 
         $fields->fieldByName('Root')->fieldByName('ModelComments')->setTitle('Comments');
 
-        $fields->dataFieldByName('ModelComments')->setConfig((new GF\GridFieldConfig)
+        $config = (new GF\GridFieldConfig)
             ->addComponent(new GF\GridFieldButtonRow('after'))
-            ->addComponent(new GFE\GridFieldTitleHeader())
-            ->addComponent((new GFE\GridFieldEditableColumns())
+            ->addComponent(new GFE\GridFieldTitleHeader());
+            // TO DO: add pagination once the comments are list most-recent-first
+            //->addComponent(new GF\GridFieldPaginator(30))
+
+        if (singleton(ModelComment::class)->canEdit()) {
+            $config->addComponent((new GFE\GridFieldEditableColumns())
                 ->setDisplayFields([
                     'Comment' => ['title' => 'Comment', 'callback' => function ($record, $column, $grid) {
                         if ($record->ID) {
@@ -39,11 +43,19 @@ class HasModelCommentsExtension extends DataExtension
                     'Author.Name' => ['title' => 'Author', 'field' => F\ReadonlyField::class],
                     'CreatedString' => ['title' => 'Date', 'field' => F\ReadonlyField::class],
                 ])
-            )
+            );
             // TO DO: amend this so that new records can be prepended rather than appended, and move to top of list
-            ->addComponent((new GFE\GridFieldAddNewInlineButton('buttons-after-left'))->setTitle('Post comment (press Save after commenting)'))
-            // TO DO: add pagination once the comments are list most-recent-first
-            //->addComponent(new GF\GridFieldPaginator(30))
-        );
+            $config->addComponent((new GFE\GridFieldAddNewInlineButton('buttons-after-left'))->setTitle('Post comment (press Save after commenting)'));
+        } else {
+            $config->addComponent((new GF\GridFieldDataColumns())
+                ->setDisplayFields([
+                    'Comment' => ['title' => 'Comment'],
+                    'Author.Name' => ['title' => 'Author'],
+                    'CreatedString' => ['title' => 'Date'],
+                ])
+            );
+        }
+
+        $fields->dataFieldByName('ModelComments')->setConfig($config);
     }
 }
