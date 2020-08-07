@@ -2,10 +2,14 @@
 
 namespace Sminnee\ModelComments;
 
-use SilverStripe\ORM\DataObject;
-use SilverStripe\Security\Member;
 use SilverStripe\Security\PermissionProvider;
 use SilverStripe\Security\Permission;
+use SilverStripe\Security\Member;
+use SilverStripe\ORM\FieldType\DBHTMLText;
+use SilverStripe\ORM\FieldType\DBField;
+use SilverStripe\ORM\DataObject;
+use SilverStripe\Forms\DropdownField;
+use SilverStripe\Core\Convert;
 
 class ModelComment extends DataObject implements PermissionProvider
 {
@@ -22,10 +26,60 @@ class ModelComment extends DataObject implements PermissionProvider
     ];
 
     private static $summary_fields = [
+        'CreatedString' => 'Date',
         'Author.Name' => 'Author',
-        'Created' => 'Date',
+        'ObjectType' => 'Object type',
+        'ObjectLabel' => 'Object',
         'Comment' => 'Comment',
     ];
+
+    private static $searchable_fields = [
+        'Comment',
+        'AuthorID' => [
+            'title' => 'Author',
+            'filter' => 'ExactMatchFilter',
+        ],
+    ];
+
+    /**
+     * Get the friendly name of the linked object class
+     */
+    public function getObjectType(): ?string
+    {
+        if (class_exists($this->ObjectClass)) {
+            return singleton($this->ObjectClass)->singular_name();
+        }
+        return null;
+    }
+
+    /**
+     * Create a label for the object being commented on
+     * It will use Label if available, otherwise Title
+     * It will link it if the CMSEditLink method exists
+     */
+    public function getObjectLabel():? DBHTMLText
+    {
+        $obj = $this->Object();
+
+        if(!$obj) {
+            return null;
+        }
+
+        $text = $obj->Label;
+        if (!$text) {
+            $text = $obj->Title;
+        }
+
+        $html = Convert::raw2xml($text);
+
+        if ($obj->hasMethod('CMSEditLink')) {
+            $link = $obj->CMSEditLink();
+            $html = sprintf('<a href="%s">%s</a>', Convert::raw2att($link), $html);
+        }
+
+        return DBField::create_field(DBHTMLText::class, $html);
+
+    }
 
     public function onBeforeWrite()
     {
